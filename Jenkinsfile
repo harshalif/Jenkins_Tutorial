@@ -38,5 +38,8 @@ pipeline {
         success {
             echo "✅ React App Deployed Successfully"
         }
+        failure {
+            echo "❌ Deployment Failed. Check Build Logs!"
+        }
     }
 }

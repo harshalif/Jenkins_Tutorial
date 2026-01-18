@@ -1,22 +1,26 @@
 # Stage 1: Build React app
-FROM node:18-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
+# Copy package files first (better caching)
 COPY package*.json ./
-RUN npm install
 
+# Install dependencies with legacy-peer-deps to avoid conflicts
+RUN npm install --legacy-peer-deps
+
+# Copy rest of the code
 COPY . .
-RUN npm run build
+
+# Set environment variable for production build
+ENV NODE_ENV=production
+
+# Build React app
+RUN npm run build || { echo "Build failed"; exit 1; }
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
-
-# Remove default HTML
 RUN rm -rf /usr/share/nginx/html/*
-
-# Copy React build
 COPY --from=build /app/build /usr/share/nginx/html
 
 EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"]

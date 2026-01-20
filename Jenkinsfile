@@ -1,9 +1,14 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'docker:27-cli'
+            args '--privileged -v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
 
     environment {
-        APP_NAME = "react-app"
-        IMAGE_NAME = "react-app:latest"
+        APP_NAME = 'react-app'
+        IMAGE_NAME = 'react-app:latest'
     }
 
     stages {
@@ -16,30 +21,32 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t %IMAGE_NAME% .'
+                sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
         stage('Stop Old Container') {
             steps {
-                bat 'docker stop %APP_NAME% || exit 0'
-                bat 'docker rm %APP_NAME% || exit 0'
+                sh '''
+                docker stop $APP_NAME || true
+                docker rm $APP_NAME || true
+                '''
             }
         }
 
         stage('Run New Container') {
             steps {
-                bat 'docker run -d -p 80:80 --name %APP_NAME% --restart=always %IMAGE_NAME%'
+                sh 'docker run -d -p 80:80 --name $APP_NAME --restart=always $IMAGE_NAME'
             }
         }
     }
 
     post {
         success {
-            echo "✅ React App Deployed Successfully"
+            echo '✅ React App Deployed Successfully'
         }
         failure {
-            echo "❌ Deployment Failed. Check Build Logs!"
+            echo '❌ Deployment Failed. Check Build Logs!'
         }
     }
 }
